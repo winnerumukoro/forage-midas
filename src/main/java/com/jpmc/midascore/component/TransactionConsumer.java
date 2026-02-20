@@ -18,6 +18,9 @@ public class TransactionConsumer {
     @Autowired
     private TransactionRecordRepository transactionRecordRepository;
 
+    @Autowired
+    private IncentiveService incentiveService;
+
     private int count = 0;
 
     @KafkaListener(topics = "${general.kafka-topic}")
@@ -33,8 +36,12 @@ public class TransactionConsumer {
             return;
         }
 
+        // Get incentive from external API
+        float incentiveAmount = incentiveService.getIncentive(transaction);
+
+        // Update balances
         sender.setBalance(sender.getBalance() - transaction.getAmount());
-        recipient.setBalance(recipient.getBalance() + transaction.getAmount());
+        recipient.setBalance(recipient.getBalance() + transaction.getAmount() + incentiveAmount);
 
         userRepository.save(sender);
         userRepository.save(recipient);
@@ -45,10 +52,11 @@ public class TransactionConsumer {
 
         count++;
 
-        UserRecord waldorf = userRepository.findById(5L);
-        if (waldorf != null) {
-            System.out.println(">>> Transaction #" + count + 
-                " | WALDORF balance: " + waldorf.getBalance());
+        // Print wilbur's balance (ID = 9)
+        UserRecord wilbur = userRepository.findById(9L);
+        if (wilbur != null) {
+            System.out.println(">>> Transaction #" + count +
+                " | WILBUR balance: " + wilbur.getBalance());
         }
     }
 }
